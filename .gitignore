@@ -16,3 +16,5 @@ instance/
 *.db
 
 *.pdf
+
+test_audio.mp3
