@@ -10,13 +10,20 @@ voice_id = os.getenv("VOICE_ID")
 
 pdf_reader = PdfReader('./Gs_Resume.pdf')
 
+text_chunks=[]
 # print(f"total number of pages:{len(pdf_reader.pages)}")
 
 full_text = ""
 
 for page in pdf_reader.pages:
-    full_text += page.extract_text() + "\n"
+    full_text += page.extract_text()
 # print(full_text)
+
+for i in range(0, len(full_text), 500):
+    block = full_text[i:i+500]
+
+    text_chunks.append(block)
+
 
 url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
 
@@ -25,22 +32,26 @@ headers = {
     "Content-Type": "application/json"
 }
 
-data = {
-    "text": f"{full_text}",
-    "model_id": "eleven_multilingual_v2"
-}
+for index, chunk in enumerate(text_chunks):
+    data = {
+        "text": f"{chunk}",
+        "model_id": "eleven_multilingual_v2"
+    }
 
+    response = requests.post(
+        url,
+        headers=headers,
+        json=data,
 
-response = requests.post(
-    url,
-    headers=headers,
-    json=data,
+    )
 
-)
+    print("Characters extracted:", len(chunk))
+    print("Status code:", response.status_code)
 
-print("Characters extracted:", len(full_text))
-print("Status code:", response.status_code)
-
-with open("test_audio.mp3", "wb") as f:
-    f.write(response.content)
-
+    if response.status_code == 200:
+        filename = f"audio_{index}.mp3"
+        with open(filename, "wb") as f:
+            f.write(response.content)
+    else:
+        print(response.text)
+        break
